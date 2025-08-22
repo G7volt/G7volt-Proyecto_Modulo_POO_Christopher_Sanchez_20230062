@@ -5,6 +5,7 @@ import Models.DTO.Libros.LibrosDTO;
 import Repository.LibrosRepository;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -39,7 +40,7 @@ public class LibrosService {
             LibroEntity estudianteSave = repository.save(libroEntity);
             return convertirADTO(estudianteSave);
         }catch (Exception e){
-            log.error("Error al registrar al libro: " + e.getMessage());
+            log.error("Error al registrar el libro: " + e.getMessage());
             throw new ExceptionNoEncontrado("Error al registrar el libro: " + e.getMessage());
         }
     }
@@ -48,10 +49,31 @@ public class LibrosService {
 
     public LibrosDTO update(Long id, @Valid LibrosDTO jsonDTO){
         if (jsonDTO == null){
-            throw new IllegalArgumentException("El no puede estar en blanco");
+            throw new IllegalArgumentException("El libro no puede estar en blanco");
         }
-        LibroEntity libroData = repository.findById(id).orElseThrow(() -> new Exception.ExceptionNoEncontrado("Libro no encontrado"));
+        LibroEntity libroData = repository.findById(id).orElseThrow(() -> new ExceptionNoEncontrado("Libro no encontrado"));
+        libroData.setTitulo(jsonDTO.getTitulo());
+        libroData.setIsbn(jsonDTO.getIsbn());
+        libroData.setAnio_publicacion(jsonDTO.getAnio_publicacion());
+        libroData.setGeneroLibro(jsonDTO.getGeneroLibro());
+         LibroEntity libroUpdate = repository.save(libroData);
 
+         return convertirADTO(libroUpdate);
+    }
+
+
+    public boolean delete(Long id) {
+        try{
+            LibroEntity objEntity = repository.findById(id).orElse(null);
+
+            if (objEntity != null){
+                repository.deleteById(id);
+                return true;
+            }
+            return false;
+        }catch (EmptyResultDataAccessException e){
+            throw new EmptyResultDataAccessException("No se encontró el Libro con ID: "+id,1);
+        }
     }
 
     private LibrosDTO convertirADTO(LibroEntity libro){
